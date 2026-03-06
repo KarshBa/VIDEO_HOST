@@ -6,6 +6,7 @@ const rootDir = __dirname;
 const sourceDir = path.join(rootDir, "source-videos");
 const publicDir = path.join(rootDir, "public");
 const outputDir = path.join(publicDir, "videos");
+const postersDir = path.join(publicDir, "posters");
 
 const allowedExt = new Set([".mp4", ".mov", ".m4v", ".webm", ".avi", ".mkv"]);
 
@@ -16,9 +17,14 @@ if (!fs.existsSync(sourceDir)) {
 
 fs.mkdirSync(publicDir, { recursive: true });
 fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(postersDir, { recursive: true });
 
 for (const file of fs.readdirSync(outputDir)) {
   fs.unlinkSync(path.join(outputDir, file));
+}
+
+for (const file of fs.readdirSync(postersDir)) {
+  fs.unlinkSync(path.join(postersDir, file));
 }
 
 const files = fs.readdirSync(sourceDir)
@@ -30,29 +36,49 @@ console.log("[transcode] source files:", files);
 for (const file of files) {
   const inputPath = path.join(sourceDir, file);
   const baseName = path.parse(file).name;
-  const outputName = `${baseName}.mp4`;
-  const outputPath = path.join(outputDir, outputName);
+const outputName = `${baseName}.mp4`;
+const posterName = `${baseName}.jpg`;
+const outputPath = path.join(outputDir, outputName);
+const posterPath = path.join(postersDir, posterName);
 
-  console.log(`[transcode] converting: ${file} -> ${outputName}`);
+console.log(`[transcode] converting: ${file} -> ${outputName}`);
 
-  const result = spawnSync("ffmpeg", [
-    "-y",
-    "-i", inputPath,
-    "-c:v", "libx264",
-    "-preset", "medium",
-    "-crf", "23",
-    "-c:a", "aac",
-    "-b:a", "128k",
-    "-movflags", "+faststart",
-    outputPath
-  ], { stdio: "inherit" });
+const result = spawnSync("ffmpeg", [
+  "-y",
+  "-i", inputPath,
+  "-c:v", "libx264",
+  "-preset", "medium",
+  "-crf", "23",
+  "-c:a", "aac",
+  "-b:a", "128k",
+  "-movflags", "+faststart",
+  outputPath
+], { stdio: "inherit" });
 
-  if (result.status !== 0) {
-    console.error(`[transcode] ffmpeg failed for ${file} - skipping`);
-    if (fs.existsSync(outputPath)) {
-      fs.unlinkSync(outputPath);
+if (result.status !== 0) {
+  console.error(`[transcode] ffmpeg failed for ${file} - skipping`);
+  if (fs.existsSync(outputPath)) {
+    fs.unlinkSync(outputPath);
+  }
+  continue;
+}
+
+console.log(`[transcode] generating poster: ${posterName}`);
+
+const posterResult = spawnSync("ffmpeg", [
+  "-y",
+  "-i", outputPath,
+  "-ss", "00:00:01.000",
+  "-frames:v", "1",
+  "-q:v", "2",
+  posterPath
+], { stdio: "inherit" });
+
+if (posterResult.status !== 0) {
+  console.error(`[transcode] poster generation failed for ${outputName}`);
+  if (fs.existsSync(posterPath)) {
+    fs.unlinkSync(posterPath);
     }
-    continue;
   }
 }
 
