@@ -109,13 +109,6 @@
       margin-bottom: 24px;
     }
 
-    .player-shell.sticky-mobile {
-      position: sticky;
-      top: 72px;
-      z-index: 15;
-      backdrop-filter: blur(10px);
-    }
-
     .stage {
       position: relative;
       background: #000;
@@ -339,7 +332,10 @@
   }
 
   .player-shell.sticky-mobile {
+    position: sticky;
     top: 68px;
+    z-index: 15;
+    backdrop-filter: blur(10px);
   }
 
   .stage {
@@ -524,7 +520,7 @@
     function scrollToPlayer() {
       if (!playerShell) return;
 
-      const headerOffset = window.innerWidth <= 720 ? 86 : 96;
+      const headerOffset = window.innerWidth <= 720 ? 86 : 84;
       const top = playerShell.getBoundingClientRect().top + window.scrollY - headerOffset;
 
       window.scrollTo({
