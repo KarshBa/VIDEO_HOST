@@ -17,6 +17,10 @@ if (!fs.existsSync(sourceDir)) {
 fs.mkdirSync(publicDir, { recursive: true });
 fs.mkdirSync(outputDir, { recursive: true });
 
+for (const file of fs.readdirSync(outputDir)) {
+  fs.unlinkSync(path.join(outputDir, file));
+}
+
 const files = fs.readdirSync(sourceDir)
   .filter((file) => allowedExt.has(path.extname(file).toLowerCase()))
   .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -45,6 +49,9 @@ for (const file of files) {
 
   if (result.status !== 0) {
     console.error(`[transcode] ffmpeg failed for ${file} - skipping`);
+    if (fs.existsSync(outputPath)) {
+      fs.unlinkSync(outputPath);
+    }
     continue;
   }
 }
