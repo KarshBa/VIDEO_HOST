@@ -423,29 +423,62 @@
     }
 
     function loadVideo(index, autoplay = false) {
-      if (!videos[index]) return;
-      currentIndex = index;
-      const item = videos[index];
+  if (!videos[index]) return;
 
-      showLoading(true);
-      titleEl.textContent = item.title;
-      subEl.textContent = item.duration ? `${item.duration}` : "Video file";
+  currentIndex = index;
+  const item = videos[index];
 
-      player.pause();
-      player.src = item.src;
-      player.load();
-      setActiveCard();
+  console.log("[player] loading item:", item);
 
-      const onCanPlay = async () => {
-        showLoading(false);
-        if (autoplay) {
-          try { await player.play(); } catch (e) {}
-        }
-        player.removeEventListener("canplay", onCanPlay);
-      };
+  showLoading(true);
+  titleEl.textContent = item.title;
+  subEl.textContent = item.duration ? item.duration : "Loading video...";
 
-      player.addEventListener("canplay", onCanPlay);
+  player.pause();
+  player.src = item.src;
+  player.load();
+  setActiveCard();
+
+  const timeout = setTimeout(() => {
+    console.warn("[player] timeout waiting for canplay:", item.src);
+    showLoading(false);
+    subEl.textContent = "Timed out loading this video.";
+  }, 8000);
+
+  const onCanPlay = async () => {
+    clearTimeout(timeout);
+    console.log("[player] ready:", item.src);
+    showLoading(false);
+
+    if (autoplay) {
+      try {
+        await player.play();
+      } catch (e) {
+        console.warn("[player] autoplay blocked:", e);
+      }
     }
+  };
+
+  const onError = () => {
+    clearTimeout(timeout);
+    console.error("[player] failed to load:", item.src, player.error);
+    showLoading(false);
+    subEl.textContent = "Failed to load this video.";
+  };
+
+  player.addEventListener("canplay", onCanPlay, { once: true });
+  player.addEventListener("error", onError, { once: true });
+}
+
+  const onError = () => {
+    console.error("[player] failed to load:", item.src, player.error);
+    showLoading(false);
+    subEl.textContent = "Failed to load this video.";
+  };
+
+  player.addEventListener("canplay", onCanPlay, { once: true });
+  player.addEventListener("error", onError, { once: true });
+}
 
     function prevVideo() {
       if (!videos.length) return;
@@ -458,38 +491,85 @@
     }
 
     async function makeThumbnail(src) {
-      return new Promise((resolve) => {
-        const v = document.createElement("video");
-        v.src = src;
-        v.muted = true;
-        v.playsInline = true;
-        v.preload = "metadata";
-        v.crossOrigin = "anonymous";
+  return new Promise((resolve) => {
+    const v = document.createElement("video");
+    let finished = false;
 
-        const fail = () => resolve(null);
+    const done = (result) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      resolve(result);
+    };
 
-        v.addEventListener("error", fail, { once: true });
+    const timer = setTimeout(() => {
+      console.warn("[thumb] timeout while generating thumbnail for:", src);
+      done(null);
+    }, 5000);
 
-        v.addEventListener("loadeddata", () => {
-          try {
-            const canvas = document.createElement("canvas");
-            canvas.width = v.videoWidth || 640;
-            canvas.height = v.videoHeight || 360;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-            resolve({
-              canvas,
-              duration: formatDuration(v.duration)
-            });
-          } catch (err) {
-            resolve({
-              canvas: null,
-              duration: formatDuration(v.duration)
-            });
-          }
-        }, { once: true });
-      });
-    }
+    v.src = src;
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = "metadata";
+
+    console.log("[thumb] start:", src);
+
+    v.addEventListener("error", () => {
+      console.error("[thumb] video error for:", src, v.error);
+      done(null);
+    }, { once: true });
+
+    v.addEventListener("loadedmetadata", () => {
+      console.log("[thumb] loadedmetadata:", src, "duration:", v.duration);
+
+      if (!Number.isFinite(v.duration) || v.duration <= 0) {
+        done({
+          canvas: null,
+          duration: ""
+        });
+        return;
+      }
+
+      const targetTime = Math.min(0.1, Math.max(v.duration / 2, 0.1));
+
+      try {
+        v.currentTime = targetTime;
+      } catch (err) {
+        console.warn("[thumb] seek failed, using fallback:", src, err);
+        done({
+          canvas: null,
+          duration: formatDuration(v.duration)
+        });
+      }
+    }, { once: true });
+
+    v.addEventListener("seeked", () => {
+      console.log("[thumb] seeked:", src);
+
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = v.videoWidth || 640;
+        canvas.height = v.videoHeight || 360;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+
+        done({
+          canvas,
+          duration: formatDuration(v.duration)
+        });
+      } catch (err) {
+        console.warn("[thumb] canvas draw failed:", src, err);
+        done({
+          canvas: null,
+          duration: formatDuration(v.duration)
+        });
+      }
+    }, { once: true });
+
+    v.load();
+  });
+}
 
     async function renderGallery() {
       if (!videos.length) {
@@ -555,34 +635,50 @@
       }
 
       setActiveCard();
-      subEl.textContent = videos[0]?.duration || "Video file";
     }
 
     async function init() {
-      try {
-        const manifest = await fetchManifest();
+  try {
+    const manifest = await fetchManifest();
 
-        videos = manifest.files.map((filename) => ({
-          filename,
-          title: prettyName(filename),
-          src: `videos/${encodeURIComponent(filename)}`
-        }));
+    videos = manifest.files.map((filename) => ({
+      filename,
+      title: prettyName(filename),
+      src: `videos/${encodeURIComponent(filename)}`
+    }));
 
-        await renderGallery();
-        loadVideo(0, false);
-    } catch (err) {
-      console.error("[videos] init failed:", err);
+    console.log("[videos] built video list:", videos);
 
+    if (!videos.length) {
       gallery.innerHTML = `
         <div class="empty">
-         Could not load <code>videos.json</code>.<br><br>
+          No videos found in <code>videos.json</code>.
+        </div>
+      `;
+      titleEl.textContent = "No videos found";
+      subEl.textContent = "Add files to /videos and redeploy.";
+      return;
+    }
+
+    // Load first video immediately
+    loadVideo(0, false);
+
+    // Then build gallery / thumbnails
+    await renderGallery();
+
+  } catch (err) {
+    console.error("[videos] init failed:", err);
+
+    gallery.innerHTML = `
+      <div class="empty">
+        Could not load <code>videos.json</code>.<br><br>
         Error: ${err.message}
       </div>
-      `;
-      titleEl.textContent = "Setup needed";
-      subEl.textContent = err.message;
-      }
-    }
+    `;
+    titleEl.textContent = "Setup needed";
+    subEl.textContent = err.message;
+  }
+}
 
     prevBtn.addEventListener("click", prevVideo);
     nextBtn.addEventListener("click", nextVideo);
@@ -595,6 +691,23 @@
     player.addEventListener("waiting", () => showLoading(true));
     player.addEventListener("playing", () => showLoading(false));
     player.addEventListener("loadeddata", () => showLoading(false));
+    player.addEventListener("loadstart", () => {
+      console.log("[player] loadstart:", player.src);
+    });
+
+    player.addEventListener("loadedmetadata", () => {
+      console.log("[player] loadedmetadata:", player.src, "duration:", player.duration);
+    });
+
+    player.addEventListener("canplay", () => {
+      console.log("[player] canplay:", player.src);
+    });
+
+    player.addEventListener("error", () => {
+      console.error("[player] error:", player.src, player.error);
+      showLoading(false);
+      subEl.textContent = "Video failed to load.";
+    });
 
     init();
   </script>
