@@ -2,6 +2,6 @@
   "name": "render-video-library",
   "private": true,
   "scripts": {
-    "build": "node build-video-manifest.js"
+    "build": "node transcode-videos.js && node build-video-manifest.js"
   }
 }
