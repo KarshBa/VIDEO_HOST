@@ -411,7 +411,7 @@
 
     <section class="player-shell sticky-mobile" id="playerShell">
       <div class="stage" id="stage">
-        <video id="player" controls preload="metadata" playsinline></video>
+        <video id="player" controls preload="metadata" playsinline poster=""></video>
         <div class="overlay">
           <div style="text-align:center;color:#fff;font-weight:600;">
             <div class="spinner"></div>
@@ -541,6 +541,7 @@
       subEl.textContent = item.duration ? item.duration : "Loading video...";
 
       player.pause();
+      player.poster = item.poster || "";
       player.src = item.src;
       player.load();
       setActiveCard();
