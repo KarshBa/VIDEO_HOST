@@ -44,8 +44,8 @@ for (const file of files) {
   ], { stdio: "inherit" });
 
   if (result.status !== 0) {
-    console.error(`[transcode] ffmpeg failed for ${file}`);
-    process.exit(result.status || 1);
+    console.error(`[transcode] ffmpeg failed for ${file} - skipping`);
+    continue;
   }
 }
 
