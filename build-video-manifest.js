@@ -16,10 +16,6 @@ const files = fs
   .filter((file) => allowedExt.has(path.extname(file).toLowerCase()))
   .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-fs.writeFileSync(
-  outputFile,
-  JSON.stringify({ files }, null, 2),
-  "utf8"
-);
+fs.writeFileSync(outputFile, JSON.stringify({ files }, null, 2), "utf8");
 
 console.log(`Generated videos.json with ${files.length} video(s).`);
