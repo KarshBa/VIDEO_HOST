@@ -33,6 +33,7 @@
         radial-gradient(circle at top, rgba(56,189,248,0.10), transparent 24%),
         linear-gradient(180deg, #0b1220 0%, var(--bg) 100%);
       color: var(--text);
+      scroll-behavior: smooth;
     }
 
     body { min-height: 100vh; }
@@ -311,11 +312,71 @@
     }
 
     @media (max-width: 720px) {
-      .player-shell { padding: 12px; }
-      .meta { padding-top: 14px; }
-      .btn-row { width: 100%; }
-      button.nav { flex: 1 1 140px; }
-    }
+  .wrap {
+    width: min(calc(100% - 20px), var(--maxw));
+  }
+
+  main {
+    padding: 18px 0 28px;
+  }
+
+  .intro p {
+    margin-bottom: 18px;
+    font-size: 0.96rem;
+  }
+
+  .player-shell {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .stage {
+    border-radius: 14px;
+  }
+
+  .meta {
+    padding-top: 14px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meta h3 {
+    font-size: 1rem;
+  }
+
+  .meta p {
+    font-size: 0.9rem;
+  }
+
+  .btn-row {
+    width: 100%;
+  }
+
+  button.nav {
+    flex: 1 1 140px;
+  }
+
+  .gallery {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .card {
+    padding: 8px;
+  }
+
+  .card-body {
+    padding: 10px 2px 2px;
+  }
+
+  .card-title {
+    font-size: 0.98rem;
+  }
+
+  .card-sub {
+    font-size: 0.88rem;
+  }
+}
   </style>
 </head>
 <body>
@@ -337,7 +398,7 @@
       </p>
     </section>
 
-    <section class="player-shell">
+    <section class="player-shell" id="playerShell">
       <div class="stage" id="stage">
         <video id="player" controls preload="metadata" playsinline></video>
         <div class="overlay">
@@ -375,6 +436,7 @@
     const titleEl = document.getElementById("currentTitle");
     const subEl = document.getElementById("currentSub");
     const stage = document.getElementById("stage");
+    const playerShell = document.getElementById("playerShell");
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
 
@@ -444,6 +506,18 @@
       [...gallery.querySelectorAll(".card")].forEach((card, i) => {
         card.classList.toggle("active", i === currentIndex);
       });
+    }
+
+    function scrollToPlayerIfNeeded() {
+      if (window.innerWidth <= 720 && playerShell) {
+        const headerOffset = 90;
+        const top = playerShell.getBoundingClientRect().top + window.scrollY - headerOffset;
+
+        window.scrollTo({
+          top,
+          behavior: "smooth"
+        });
+      }
     }
 
     function loadVideo(index, autoplay = false) {
@@ -598,7 +672,10 @@
         const card = document.createElement("button");
         card.className = "card";
         card.type = "button";
-        card.addEventListener("click", () => loadVideo(i, true));
+        card.addEventListener("click", () => {
+          loadVideo(i, true);
+          scrollToPlayerIfNeeded();
+        });
 
         const thumb = document.createElement("div");
         thumb.className = "thumb";
