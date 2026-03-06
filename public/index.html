@@ -24,6 +24,7 @@
     }
 
     * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
       padding: 0;
@@ -245,12 +246,21 @@
       aspect-ratio: 16 / 9;
     }
 
-    .thumb canvas,
-    .thumb img {
+    .thumb canvas {
       width: 100%;
       height: 100%;
       display: block;
       object-fit: cover;
+    }
+
+    .thumb-fallback {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: #475569;
+      font-weight: 700;
+      background: #dbe4ee;
     }
 
     .dur {
@@ -281,6 +291,7 @@
       color: #64748b;
       font-size: 0.92rem;
       line-height: 1.4;
+      word-break: break-word;
     }
 
     .empty {
@@ -313,7 +324,7 @@
       <div class="logo">▶</div>
       <div class="title">
         <h1>Video Library</h1>
-        <p>Drop videos into /videos and redeploy</p>
+        <p>Drop videos into /source-videos and redeploy</p>
       </div>
     </div>
   </header>
@@ -322,8 +333,7 @@
     <section class="intro">
       <h2>Featured Video</h2>
       <p>
-        This gallery reads a generated <code>videos.json</code> file, builds the library automatically,
-        and creates thumbnails in the browser from each video. No manual JavaScript edits.
+        Videos are automatically transcoded during deploy, added to the library, and displayed here with generated thumbnails.
       </p>
     </section>
 
@@ -354,7 +364,7 @@
       <h3 class="section-title">Library</h3>
       <div class="gallery" id="gallery"></div>
       <div class="note">
-        Thumbnails and durations are generated automatically from the video files.
+        Thumbnails and durations are generated automatically from the published video files.
       </div>
     </section>
   </main>
@@ -376,24 +386,22 @@
     let currentIndex = 0;
 
     async function fetchManifest() {
-  const url = `${location.origin}/videos.json?v=${Date.now()}`;
-  console.log("[videos] requesting manifest:", url);
+      const url = `${location.origin}/videos.json?v=${Date.now()}`;
+      console.log("[videos] requesting manifest:", url);
 
-  const res = await fetch(url, {
-    cache: "no-store"
-  });
+      const res = await fetch(url, { cache: "no-store" });
 
-  console.log("[videos] manifest status:", res.status, res.statusText);
-  console.log("[videos] manifest content-type:", res.headers.get("content-type"));
+      console.log("[videos] manifest status:", res.status, res.statusText);
+      console.log("[videos] manifest content-type:", res.headers.get("content-type"));
 
-  if (!res.ok) {
-    throw new Error(`Could not load videos.json (${res.status} ${res.statusText})`);
-  }
+      if (!res.ok) {
+        throw new Error(`Could not load videos.json (${res.status} ${res.statusText})`);
+      }
 
-  const data = await res.json();
-  console.log("[videos] manifest data:", data);
-  return data;
-}
+      const data = await res.json();
+      console.log("[videos] manifest data:", data);
+      return data;
+    }
 
     function prettyName(filename) {
       return filename
@@ -406,7 +414,7 @@
 
     function showLoading(on) {
       stage.classList.toggle("loading", on);
-  }
+    }
 
     function formatDuration(seconds) {
       if (!Number.isFinite(seconds)) return "";
@@ -423,53 +431,53 @@
     }
 
     function loadVideo(index, autoplay = false) {
-  if (!videos[index]) return;
+      if (!videos[index]) return;
 
-  currentIndex = index;
-  const item = videos[index];
+      currentIndex = index;
+      const item = videos[index];
 
-  console.log("[player] loading item:", item);
+      console.log("[player] loading item:", item);
 
-  showLoading(true);
-  titleEl.textContent = item.title;
-  subEl.textContent = item.duration ? item.duration : "Loading video...";
+      showLoading(true);
+      titleEl.textContent = item.title;
+      subEl.textContent = item.duration ? item.duration : "Loading video...";
 
-  player.pause();
-  player.src = item.src;
-  player.load();
-  setActiveCard();
+      player.pause();
+      player.src = item.src;
+      player.load();
+      setActiveCard();
 
-  const timeout = setTimeout(() => {
-    console.warn("[player] timeout waiting for canplay:", item.src);
-    showLoading(false);
-    subEl.textContent = "Timed out loading this video.";
-  }, 8000);
+      const timeout = setTimeout(() => {
+        console.warn("[player] timeout waiting for canplay:", item.src);
+        showLoading(false);
+        subEl.textContent = "Timed out loading this video.";
+      }, 8000);
 
-  const onCanPlay = async () => {
-    clearTimeout(timeout);
-    console.log("[player] ready:", item.src);
-    showLoading(false);
+      const onCanPlay = async () => {
+        clearTimeout(timeout);
+        console.log("[player] ready:", item.src);
+        showLoading(false);
 
-    if (autoplay) {
-      try {
-        await player.play();
-      } catch (e) {
-        console.warn("[player] autoplay blocked:", e);
-      }
+        if (autoplay) {
+          try {
+            await player.play();
+          } catch (e) {
+            console.warn("[player] autoplay blocked:", e);
+          }
+        }
+      };
+
+      const onError = () => {
+        clearTimeout(timeout);
+        console.error("[player] failed to load:", item.src, player.error);
+        showLoading(false);
+        subEl.textContent = "Failed to load this video.";
+      };
+
+      player.addEventListener("canplay", onCanPlay, { once: true });
+      player.addEventListener("error", onError, { once: true });
     }
-  };
 
-  const onError = () => {
-    clearTimeout(timeout);
-    console.error("[player] failed to load:", item.src, player.error);
-    showLoading(false);
-    subEl.textContent = "Failed to load this video.";
-  };
-
-  player.addEventListener("canplay", onCanPlay, { once: true });
-  player.addEventListener("error", onError, { once: true });
-}
-    
     function prevVideo() {
       if (!videos.length) return;
       loadVideo((currentIndex - 1 + videos.length) % videos.length, true);
@@ -481,91 +489,88 @@
     }
 
     async function makeThumbnail(src) {
-  return new Promise((resolve) => {
-    const v = document.createElement("video");
-    let finished = false;
+      return new Promise((resolve) => {
+        const v = document.createElement("video");
+        let finished = false;
 
-    const done = (result) => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      resolve(result);
-    };
+        const done = (result) => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          resolve(result);
+        };
 
-    const timer = setTimeout(() => {
-      console.warn("[thumb] timeout while generating thumbnail for:", src);
-      done(null);
-    }, 5000);
+        const timer = setTimeout(() => {
+          console.warn("[thumb] timeout while generating thumbnail for:", src);
+          done(null);
+        }, 5000);
 
-    v.src = src;
-    v.muted = true;
-    v.playsInline = true;
-    v.preload = "metadata";
+        v.src = src;
+        v.muted = true;
+        v.playsInline = true;
+        v.preload = "metadata";
 
-    console.log("[thumb] start:", src);
+        console.log("[thumb] start:", src);
 
-    v.addEventListener("error", () => {
-      console.error("[thumb] video error for:", src, v.error);
-      done(null);
-    }, { once: true });
+        v.addEventListener("error", () => {
+          console.error("[thumb] video error for:", src, v.error);
+          done(null);
+        }, { once: true });
 
-    v.addEventListener("loadedmetadata", () => {
-      console.log("[thumb] loadedmetadata:", src, "duration:", v.duration);
+        v.addEventListener("loadedmetadata", () => {
+          console.log("[thumb] loadedmetadata:", src, "duration:", v.duration);
 
-      if (!Number.isFinite(v.duration) || v.duration <= 0) {
-        done({
-          canvas: null,
-          duration: ""
-        });
-        return;
-      }
+          if (!Number.isFinite(v.duration) || v.duration <= 0) {
+            done({ canvas: null, duration: "" });
+            return;
+          }
 
-      const targetTime = Math.min(0.1, Math.max(v.duration / 2, 0.1));
+          const targetTime = Math.min(0.1, Math.max(v.duration / 2, 0.1));
 
-      try {
-        v.currentTime = targetTime;
-      } catch (err) {
-        console.warn("[thumb] seek failed, using fallback:", src, err);
-        done({
-          canvas: null,
-          duration: formatDuration(v.duration)
-        });
-      }
-    }, { once: true });
+          try {
+            v.currentTime = targetTime;
+          } catch (err) {
+            console.warn("[thumb] seek failed, using fallback:", src, err);
+            done({
+              canvas: null,
+              duration: formatDuration(v.duration)
+            });
+          }
+        }, { once: true });
 
-    v.addEventListener("seeked", () => {
-      console.log("[thumb] seeked:", src);
+        v.addEventListener("seeked", () => {
+          console.log("[thumb] seeked:", src);
 
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = v.videoWidth || 640;
-        canvas.height = v.videoHeight || 360;
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = v.videoWidth || 640;
+            canvas.height = v.videoHeight || 360;
 
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
 
-        done({
-          canvas,
-          duration: formatDuration(v.duration)
-        });
-      } catch (err) {
-        console.warn("[thumb] canvas draw failed:", src, err);
-        done({
-          canvas: null,
-          duration: formatDuration(v.duration)
-        });
-      }
-    }, { once: true });
+            done({
+              canvas,
+              duration: formatDuration(v.duration)
+            });
+          } catch (err) {
+            console.warn("[thumb] canvas draw failed:", src, err);
+            done({
+              canvas: null,
+              duration: formatDuration(v.duration)
+            });
+          }
+        }, { once: true });
 
-    v.load();
-  });
-}
+        v.load();
+      });
+    }
 
     async function renderGallery() {
       if (!videos.length) {
         gallery.innerHTML = `<div class="empty">No videos found in <code>videos.json</code>.</div>`;
         titleEl.textContent = "No videos found";
-        subEl.textContent = "Add files to /videos and redeploy.";
+        subEl.textContent = "Add files to /source-videos and redeploy.";
         return;
       }
 
@@ -584,23 +589,18 @@
 
         const thumbResult = await makeThumbnail(item.src);
 
-        if (thumbResult?.canvas) {
+        if (thumbResult && thumbResult.canvas) {
           thumb.appendChild(thumbResult.canvas);
         } else {
           const fallback = document.createElement("div");
-          fallback.style.width = "100%";
-          fallback.style.height = "100%";
-          fallback.style.display = "grid";
-          fallback.style.placeItems = "center";
-          fallback.style.color = "#475569";
-          fallback.style.fontWeight = "700";
+          fallback.className = "thumb-fallback";
           fallback.textContent = "VIDEO";
           thumb.appendChild(fallback);
         }
 
         const dur = document.createElement("span");
         dur.className = "dur";
-        dur.textContent = thumbResult?.duration || "";
+        dur.textContent = thumbResult && thumbResult.duration ? thumbResult.duration : "";
         thumb.appendChild(dur);
 
         const body = document.createElement("div");
@@ -621,54 +621,50 @@
         card.appendChild(body);
         gallery.appendChild(card);
 
-        item.duration = thumbResult?.duration || "";
+        item.duration = thumbResult && thumbResult.duration ? thumbResult.duration : "";
       }
 
       setActiveCard();
     }
 
     async function init() {
-  try {
-    const manifest = await fetchManifest();
+      try {
+        const manifest = await fetchManifest();
 
-    videos = manifest.files.map((filename) => ({
-      filename,
-      title: prettyName(filename),
-      src: `videos/${encodeURIComponent(filename)}`
-    }));
+        videos = manifest.files.map((filename) => ({
+          filename,
+          title: prettyName(filename),
+          src: `videos/${encodeURIComponent(filename)}`
+        }));
 
-    console.log("[videos] built video list:", videos);
+        console.log("[videos] built video list:", videos);
 
-    if (!videos.length) {
-      gallery.innerHTML = `
-        <div class="empty">
-          No videos found in <code>videos.json</code>.
-        </div>
-      `;
-      titleEl.textContent = "No videos found";
-      subEl.textContent = "Add files to /videos and redeploy.";
-      return;
+        if (!videos.length) {
+          gallery.innerHTML = `
+            <div class="empty">
+              No videos found in <code>videos.json</code>.
+            </div>
+          `;
+          titleEl.textContent = "No videos found";
+          subEl.textContent = "Add files to /source-videos and redeploy.";
+          return;
+        }
+
+        loadVideo(0, false);
+        await renderGallery();
+      } catch (err) {
+        console.error("[videos] init failed:", err);
+
+        gallery.innerHTML = `
+          <div class="empty">
+            Could not load <code>videos.json</code>.<br><br>
+            Error: ${err.message}
+          </div>
+        `;
+        titleEl.textContent = "Setup needed";
+        subEl.textContent = err.message;
+      }
     }
-
-    // Load first video immediately
-    loadVideo(0, false);
-
-    // Then build gallery / thumbnails
-    await renderGallery();
-
-  } catch (err) {
-    console.error("[videos] init failed:", err);
-
-    gallery.innerHTML = `
-      <div class="empty">
-        Could not load <code>videos.json</code>.<br><br>
-        Error: ${err.message}
-      </div>
-    `;
-    titleEl.textContent = "Setup needed";
-    subEl.textContent = err.message;
-  }
-}
 
     prevBtn.addEventListener("click", prevVideo);
     nextBtn.addEventListener("click", nextVideo);
@@ -681,6 +677,7 @@
     player.addEventListener("waiting", () => showLoading(true));
     player.addEventListener("playing", () => showLoading(false));
     player.addEventListener("loadeddata", () => showLoading(false));
+
     player.addEventListener("loadstart", () => {
       console.log("[player] loadstart:", player.src);
     });
