@@ -416,6 +416,12 @@
       return h > 0 ? `${h}:${m.padStart(2, "0")}:${s}` : `${m}:${s}`;
     }
 
+    function setActiveCard() {
+      [...gallery.querySelectorAll(".card")].forEach((card, i) => {
+        card.classList.toggle("active", i === currentIndex);
+      });
+    }
+
     function loadVideo(index, autoplay = false) {
   if (!videos[index]) return;
 
