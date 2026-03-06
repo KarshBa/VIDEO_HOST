@@ -451,17 +451,7 @@
   player.addEventListener("canplay", onCanPlay, { once: true });
   player.addEventListener("error", onError, { once: true });
 }
-
-  const onError = () => {
-    console.error("[player] failed to load:", item.src, player.error);
-    showLoading(false);
-    subEl.textContent = "Failed to load this video.";
-  };
-
-  player.addEventListener("canplay", onCanPlay, { once: true });
-  player.addEventListener("error", onError, { once: true });
-}
-
+    
     function prevVideo() {
       if (!videos.length) return;
       loadVideo((currentIndex - 1 + videos.length) % videos.length, true);
