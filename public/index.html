@@ -394,11 +394,14 @@
       console.log("[videos] manifest status:", res.status, res.statusText);
       console.log("[videos] manifest content-type:", res.headers.get("content-type"));
 
+      const text = await res.text();
+      console.log("[videos] raw manifest text:", text);
+
       if (!res.ok) {
         throw new Error(`Could not load videos.json (${res.status} ${res.statusText})`);
       }
 
-      const data = await res.json();
+      const data = JSON.parse(text);
       console.log("[videos] manifest data:", data);
       return data;
     }
