@@ -368,14 +368,32 @@
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
 
+    console.log("[videos] page loaded");
+    console.log("[videos] origin:", location.origin);
+    console.log("[videos] pathname:", location.pathname);
+
     let videos = [];
     let currentIndex = 0;
 
     async function fetchManifest() {
-      const res = await fetch("videos.json", { cache: "no-store" });
-      if (!res.ok) throw new Error("Could not load videos.json");
-      return res.json();
-    }
+  const url = `${location.origin}/videos.json?v=${Date.now()}`;
+  console.log("[videos] requesting manifest:", url);
+
+  const res = await fetch(url, {
+    cache: "no-store"
+  });
+
+  console.log("[videos] manifest status:", res.status, res.statusText);
+  console.log("[videos] manifest content-type:", res.headers.get("content-type"));
+
+  if (!res.ok) {
+    throw new Error(`Could not load videos.json (${res.status} ${res.statusText})`);
+  }
+
+  const data = await res.json();
+  console.log("[videos] manifest data:", data);
+  return data;
+}
 
     function prettyName(filename) {
       return filename
@@ -552,15 +570,17 @@
 
         await renderGallery();
         loadVideo(0, false);
-      } catch (err) {
-        gallery.innerHTML = `
-          <div class="empty">
-            Could not load <code>videos.json</code>.<br><br>
-            Make sure your build step generates it before deploy.
-          </div>
-        `;
-        titleEl.textContent = "Setup needed";
-        subEl.textContent = "Generate videos.json during build.";
+    } catch (err) {
+      console.error("[videos] init failed:", err);
+
+      gallery.innerHTML = `
+        <div class="empty">
+         Could not load <code>videos.json</code>.<br><br>
+        Error: ${err.message}
+      </div>
+      `;
+      titleEl.textContent = "Setup needed";
+      subEl.textContent = err.message;
       }
     }
 
