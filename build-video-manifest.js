@@ -2,10 +2,11 @@ const fs = require("fs");
 const path = require("path");
 
 const rootDir = __dirname;
-const videosDir = path.join(rootDir, "public", "videos");
-const outputFile = path.join(rootDir, "public", "videos.json");
+const publicDir = path.join(rootDir, "public");
+const videosDir = path.join(publicDir, "videos");
+const outputFile = path.join(publicDir, "videos.json");
 
-fs.mkdirSync(path.dirname(outputFile), { recursive: true });
+fs.mkdirSync(publicDir, { recursive: true });
 
 let files = [];
 
@@ -16,9 +17,13 @@ if (fs.existsSync(videosDir)) {
 }
 
 const manifest = { files };
+const json = JSON.stringify(manifest, null, 2);
 
-fs.writeFileSync(outputFile, JSON.stringify(manifest, null, 2), "utf8");
+// Write atomically: temp file first, then rename
+const tempFile = `${outputFile}.tmp`;
+fs.writeFileSync(tempFile, json, "utf8");
+fs.renameSync(tempFile, outputFile);
 
 console.log("[manifest] wrote:", outputFile);
 console.log("[manifest] contents:");
-console.log(JSON.stringify(manifest, null, 2));
+console.log(json);
