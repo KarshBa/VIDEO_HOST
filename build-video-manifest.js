@@ -4,26 +4,42 @@ const path = require("path");
 const rootDir = __dirname;
 const publicDir = path.join(rootDir, "public");
 const videosDir = path.join(publicDir, "videos");
+const postersDir = path.join(publicDir, "posters");
 const outputFile = path.join(publicDir, "videos.json");
 
 console.log("[manifest] rootDir:", rootDir);
 console.log("[manifest] publicDir exists:", fs.existsSync(publicDir));
 console.log("[manifest] videosDir exists:", fs.existsSync(videosDir));
+console.log("[manifest] postersDir exists:", fs.existsSync(postersDir));
 
 fs.mkdirSync(publicDir, { recursive: true });
 
-let files = [];
+let videos = [];
 
 if (fs.existsSync(videosDir)) {
-  files = fs.readdirSync(videosDir)
+  const files = fs.readdirSync(videosDir)
     .filter((file) => file.toLowerCase().endsWith(".mp4"))
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+  videos = files.map((file) => {
+    const baseName = path.parse(file).name;
+    const posterFile = `${baseName}.jpg`;
+    const posterPath = path.join(postersDir, posterFile);
+
+    return {
+      filename: file,
+      src: `videos/${encodeURIComponent(file)}`,
+      poster: fs.existsSync(posterPath)
+        ? `posters/${encodeURIComponent(posterFile)}`
+        : "",
+    };
+  });
 }
 
-const manifest = { files };
+const manifest = { videos };
 const json = JSON.stringify(manifest, null, 2);
 
-console.log("[manifest] files array:", files);
+console.log("[manifest] videos array:", videos);
 console.log("[manifest] json to write:", json);
 console.log("[manifest] json length:", json.length);
 
