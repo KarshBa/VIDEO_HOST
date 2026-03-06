@@ -109,6 +109,13 @@
       margin-bottom: 24px;
     }
 
+    .player-shell.sticky-mobile {
+      position: sticky;
+      top: 72px;
+      z-index: 15;
+      backdrop-filter: blur(10px);
+    }
+
     .stage {
       position: relative;
       background: #000;
@@ -227,6 +234,7 @@
       cursor: pointer;
       box-shadow: var(--shadow);
       transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+      position: relative;
     }
 
     .card:hover {
@@ -330,6 +338,10 @@
     border-radius: 16px;
   }
 
+  .player-shell.sticky-mobile {
+    top: 68px;
+  }
+
   .stage {
     border-radius: 14px;
   }
@@ -377,6 +389,7 @@
     font-size: 0.88rem;
   }
 }
+    
   </style>
 </head>
 <body>
@@ -398,7 +411,7 @@
       </p>
     </section>
 
-    <section class="player-shell" id="playerShell">
+    <section class="player-shell sticky-mobile" id="playerShell">
       <div class="stage" id="stage">
         <video id="player" controls preload="metadata" playsinline></video>
         <div class="overlay">
@@ -508,16 +521,16 @@
       });
     }
 
-    function scrollToPlayerIfNeeded() {
-      if (window.innerWidth <= 720 && playerShell) {
-        const headerOffset = 90;
-        const top = playerShell.getBoundingClientRect().top + window.scrollY - headerOffset;
+    function scrollToPlayer() {
+      if (!playerShell) return;
 
-        window.scrollTo({
-          top,
-          behavior: "smooth"
-        });
-      }
+      const headerOffset = window.innerWidth <= 720 ? 86 : 96;
+      const top = playerShell.getBoundingClientRect().top + window.scrollY - headerOffset;
+
+      window.scrollTo({
+        top,
+        behavior: "smooth"
+      });
     }
 
     function loadVideo(index, autoplay = false) {
@@ -571,11 +584,13 @@
     function prevVideo() {
       if (!videos.length) return;
       loadVideo((currentIndex - 1 + videos.length) % videos.length, true);
+      scrollToPlayer();
     }
 
     function nextVideo() {
       if (!videos.length) return;
       loadVideo((currentIndex + 1) % videos.length, true);
+      scrollToPlayer();
     }
 
     async function makeThumbnail(src) {
@@ -674,7 +689,7 @@
         card.type = "button";
         card.addEventListener("click", () => {
           loadVideo(i, true);
-          scrollToPlayerIfNeeded();
+          scrollToPlayer();
         });
 
         const thumb = document.createElement("div");
