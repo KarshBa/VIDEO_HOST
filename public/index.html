@@ -395,14 +395,18 @@
       console.log("[videos] manifest content-type:", res.headers.get("content-type"));
 
       const text = await res.text();
-      console.log("[videos] raw manifest text:", text);
+      console.log("[videos] raw manifest text:", JSON.stringify(text));
 
       if (!res.ok) {
         throw new Error(`Could not load videos.json (${res.status} ${res.statusText})`);
       }
 
+      if (!text.trim()) {
+        throw new Error("videos.json is empty");
+      }
+
       const data = JSON.parse(text);
-      console.log("[videos] manifest data:", data);
+        console.log("[videos] manifest data:", data);
       return data;
     }
 
