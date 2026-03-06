@@ -404,6 +404,18 @@
         .replace(/\b\w/g, c => c.toUpperCase());
     }
 
+    function showLoading(on) {
+      stage.classList.toggle("loading", on);
+  }
+
+    function formatDuration(seconds) {
+      if (!Number.isFinite(seconds)) return "";
+      const s = Math.floor(seconds % 60).toString().padStart(2, "0");
+      const m = Math.floor((seconds / 60) % 60).toString();
+      const h = Math.floor(seconds / 3600);
+      return h > 0 ? `${h}:${m.padStart(2, "0")}:${s}` : `${m}:${s}`;
+    }
+
     function loadVideo(index, autoplay = false) {
   if (!videos[index]) return;
 
