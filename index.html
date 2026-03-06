@@ -7,118 +7,99 @@
   <style>
     :root{
       --bg: #0f172a;
-      --panel: #111827;
+      --bg2: #111827;
+      --panel: rgba(255,255,255,0.05);
       --card: #ffffff;
-      --card-soft: #f8fafc;
       --text: #e5e7eb;
       --muted: #94a3b8;
       --heading: #ffffff;
       --accent: #38bdf8;
-      --accent-strong: #0ea5e9;
+      --accent-2: #0ea5e9;
       --border: rgba(255,255,255,0.08);
-      --shadow: 0 10px 30px rgba(0,0,0,0.25);
-      --radius-lg: 18px;
-      --radius-md: 14px;
-      --radius-sm: 10px;
-      --max-width: 1200px;
-      --transition: 220ms ease;
+      --shadow: 0 10px 28px rgba(0,0,0,0.28);
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --maxw: 1200px;
     }
 
     * { box-sizing: border-box; }
-
     html, body {
       margin: 0;
       padding: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background:
-        radial-gradient(circle at top, rgba(56,189,248,0.08), transparent 25%),
+        radial-gradient(circle at top, rgba(56,189,248,0.10), transparent 24%),
         linear-gradient(180deg, #0b1220 0%, var(--bg) 100%);
       color: var(--text);
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Helvetica, Arial, sans-serif;
     }
 
-    body {
-      min-height: 100vh;
+    body { min-height: 100vh; }
+
+    .wrap {
+      width: min(calc(100% - 32px), var(--maxw));
+      margin: 0 auto;
     }
 
-    .site-header {
+    header {
       position: sticky;
       top: 0;
-      z-index: 10;
-      backdrop-filter: blur(12px);
-      background: rgba(15, 23, 42, 0.75);
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(15,23,42,0.76);
       border-bottom: 1px solid var(--border);
-    }
-
-    .header-inner,
-    .page {
-      width: min(calc(100% - 32px), var(--max-width));
-      margin: 0 auto;
     }
 
     .header-inner {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 14px;
       padding: 18px 0;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand-badge {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       color: #001018;
       font-weight: 800;
       box-shadow: var(--shadow);
     }
 
-    .brand-text h1 {
+    .title h1 {
       margin: 0;
       font-size: 1.2rem;
-      line-height: 1.1;
       color: var(--heading);
-      font-weight: 700;
-      letter-spacing: 0.01em;
     }
 
-    .brand-text p {
-      margin: 2px 0 0;
+    .title p {
+      margin: 3px 0 0;
       color: var(--muted);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
     }
 
-    .page {
-      padding: 28px 0 44px;
+    main {
+      padding: 28px 0 42px;
     }
 
-    .hero {
-      margin-bottom: 24px;
-    }
-
-    .hero h2 {
+    .intro h2 {
       margin: 0 0 8px;
       font-size: clamp(1.5rem, 2vw, 2rem);
       color: var(--heading);
     }
 
-    .hero p {
-      margin: 0;
+    .intro p {
+      margin: 0 0 24px;
       color: var(--muted);
-      max-width: 720px;
+      max-width: 760px;
       line-height: 1.6;
     }
 
     .player-shell {
-      background: rgba(255,255,255,0.04);
+      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 18px;
@@ -126,11 +107,11 @@
       margin-bottom: 24px;
     }
 
-    .video-stage {
+    .stage {
       position: relative;
-      overflow: hidden;
-      border-radius: var(--radius-lg);
       background: #000;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
       aspect-ratio: 16 / 9;
     }
 
@@ -139,33 +120,26 @@
       height: 100%;
       display: block;
       background: #000;
-    }
-
-    .video-stage.is-fading video {
-      opacity: 0.28;
-      transition: opacity 180ms ease;
-    }
-
-    .video-stage video {
       opacity: 1;
       transition: opacity 180ms ease;
     }
 
-    .loading-overlay {
+    .stage.loading video {
+      opacity: 0.35;
+    }
+
+    .overlay {
       position: absolute;
       inset: 0;
       display: grid;
       place-items: center;
-      background: rgba(2, 6, 23, 0.45);
-      color: white;
-      font-weight: 600;
-      letter-spacing: 0.02em;
+      background: rgba(2, 6, 23, 0.42);
       opacity: 0;
       pointer-events: none;
-      transition: opacity var(--transition);
+      transition: opacity 180ms ease;
     }
 
-    .loading-overlay.show {
+    .stage.loading .overlay {
       opacity: 1;
     }
 
@@ -173,9 +147,9 @@
       width: 42px;
       height: 42px;
       border-radius: 999px;
-      border: 3px solid rgba(255,255,255,0.25);
+      border: 3px solid rgba(255,255,255,0.24);
       border-top-color: var(--accent);
-      animation: spin 0.85s linear infinite;
+      animation: spin 0.8s linear infinite;
       margin: 0 auto 10px;
     }
 
@@ -183,56 +157,47 @@
       to { transform: rotate(360deg); }
     }
 
-    .player-meta {
+    .meta {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 16px 6px 4px;
+      flex-wrap: wrap;
+      padding: 16px 4px 4px;
     }
 
-    .player-info h3 {
+    .meta h3 {
       margin: 0 0 4px;
       color: var(--heading);
-      font-size: 1.15rem;
+      font-size: 1.12rem;
     }
 
-    .player-info p {
+    .meta p {
       margin: 0;
       color: var(--muted);
-      font-size: 0.95rem;
     }
 
-    .controls-row {
+    .btn-row {
       display: flex;
-      flex-wrap: wrap;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
-    .nav-btn {
+    button.nav {
       border: 1px solid rgba(255,255,255,0.08);
       background: rgba(255,255,255,0.06);
       color: var(--heading);
       padding: 10px 14px;
       border-radius: 12px;
-      font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
-      transition:
-        transform var(--transition),
-        background var(--transition),
-        border-color var(--transition);
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
     }
 
-    .nav-btn:hover {
+    button.nav:hover {
       background: rgba(56,189,248,0.14);
-      border-color: rgba(56,189,248,0.38);
+      border-color: rgba(56,189,248,0.4);
       transform: translateY(-1px);
-    }
-
-    .nav-btn:active {
-      transform: translateY(0);
     }
 
     .section-title {
@@ -240,16 +205,16 @@
       font-size: 1rem;
       font-weight: 700;
       color: var(--heading);
-      letter-spacing: 0.01em;
     }
 
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 16px;
     }
 
-    .thumb-card {
+    .card {
+      width: 100%;
       appearance: none;
       border: 1px solid rgba(255,255,255,0.06);
       background: var(--card);
@@ -259,164 +224,128 @@
       text-align: left;
       cursor: pointer;
       box-shadow: var(--shadow);
-      transition:
-        transform var(--transition),
-        box-shadow var(--transition),
-        border-color var(--transition);
-      overflow: hidden;
-      width: 100%;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     }
 
-    .thumb-card:hover {
+    .card:hover {
       transform: translateY(-3px);
       border-color: rgba(14,165,233,0.45);
-      box-shadow: 0 14px 30px rgba(0,0,0,0.24);
     }
 
-    .thumb-card.active {
-      border-color: var(--accent-strong);
-      box-shadow: 0 0 0 2px rgba(14,165,233,0.18), 0 16px 36px rgba(0,0,0,0.28);
+    .card.active {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 2px rgba(14,165,233,0.18), 0 16px 36px rgba(0,0,0,0.26);
     }
 
-    .thumb-image-wrap {
+    .thumb {
       position: relative;
       overflow: hidden;
       border-radius: 12px;
-      background: #e5e7eb;
+      background: #dbe4ee;
       aspect-ratio: 16 / 9;
     }
 
-    .thumb-image {
+    .thumb canvas,
+    .thumb img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
       display: block;
-      transition: transform 280ms ease;
+      object-fit: cover;
     }
 
-    .thumb-card:hover .thumb-image {
-      transform: scale(1.03);
-    }
-
-    .thumb-duration {
+    .dur {
       position: absolute;
       right: 10px;
       bottom: 10px;
-      background: rgba(15,23,42,0.82);
+      background: rgba(15,23,42,0.84);
       color: white;
       font-size: 0.8rem;
       font-weight: 700;
       padding: 4px 7px;
       border-radius: 999px;
-      backdrop-filter: blur(6px);
     }
 
-    .thumb-body {
+    .card-body {
       padding: 12px 4px 4px;
     }
 
-    .thumb-title {
+    .card-title {
       margin: 0 0 4px;
       font-size: 1rem;
       font-weight: 700;
       color: #0f172a;
     }
 
-    .thumb-subtitle {
+    .card-sub {
       margin: 0;
       color: #64748b;
       font-size: 0.92rem;
       line-height: 1.4;
     }
 
-    .empty-state {
-      background: rgba(255,255,255,0.05);
-      border: 1px dashed rgba(255,255,255,0.18);
-      color: var(--muted);
+    .empty {
+      border: 1px dashed rgba(255,255,255,0.2);
       border-radius: var(--radius-md);
       padding: 24px;
+      color: var(--muted);
       text-align: center;
+      background: rgba(255,255,255,0.04);
     }
 
-    .footer-note {
-      color: var(--muted);
-      font-size: 0.9rem;
+    .note {
       margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
     }
 
     @media (max-width: 720px) {
-      .header-inner {
-        padding: 14px 0;
-      }
-
-      .player-shell {
-        padding: 12px;
-      }
-
-      .player-meta {
-        padding: 14px 2px 2px;
-      }
-
-      .controls-row {
-        width: 100%;
-      }
-
-      .nav-btn {
-        flex: 1 1 140px;
-        justify-content: center;
-      }
+      .player-shell { padding: 12px; }
+      .meta { padding-top: 14px; }
+      .btn-row { width: 100%; }
+      button.nav { flex: 1 1 140px; }
     }
   </style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-inner">
-      <div class="brand">
-        <div class="brand-badge">▶</div>
-        <div class="brand-text">
-          <h1>Video Library</h1>
-          <p>Professional video gallery</p>
-        </div>
+  <header>
+    <div class="wrap header-inner">
+      <div class="logo">▶</div>
+      <div class="title">
+        <h1>Video Library</h1>
+        <p>Drop videos into /videos and redeploy</p>
       </div>
     </div>
   </header>
 
-  <main class="page">
-    <section class="hero">
+  <main class="wrap">
+    <section class="intro">
       <h2>Featured Video</h2>
       <p>
-        Browse your hosted videos with a clean, responsive gallery and a built-in
-        HTML5 player. Designed for lightweight static hosting.
+        This gallery reads a generated <code>videos.json</code> file, builds the library automatically,
+        and creates thumbnails in the browser from each video. No manual JavaScript edits.
       </p>
     </section>
 
     <section class="player-shell">
-      <div class="video-stage" id="videoStage">
-        <video id="mainVideo" controls preload="metadata" playsinline>
-          Your browser does not support the HTML5 video tag.
-        </video>
-
-        <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
-          <div>
+      <div class="stage" id="stage">
+        <video id="player" controls preload="metadata" playsinline></video>
+        <div class="overlay">
+          <div style="text-align:center;color:#fff;font-weight:600;">
             <div class="spinner"></div>
-            <div>Loading video...</div>
+            Loading video...
           </div>
         </div>
       </div>
 
-      <div class="player-meta">
-        <div class="player-info">
-          <h3 id="videoTitle">Loading...</h3>
-          <p id="videoSubtitle">Preparing video library...</p>
+      <div class="meta">
+        <div>
+          <h3 id="currentTitle">Loading...</h3>
+          <p id="currentSub">Preparing library…</p>
         </div>
-
-        <div class="controls-row">
-          <button class="nav-btn" id="prevBtn" type="button" aria-label="Previous video">
-            ← Previous
-          </button>
-          <button class="nav-btn" id="nextBtn" type="button" aria-label="Next video">
-            Next →
-          </button>
+        <div class="btn-row">
+          <button class="nav" id="prevBtn" type="button">← Previous</button>
+          <button class="nav" id="nextBtn" type="button">Next →</button>
         </div>
       </div>
     </section>
@@ -424,206 +353,230 @@
     <section>
       <h3 class="section-title">Library</h3>
       <div class="gallery" id="gallery"></div>
-      <p class="footer-note">
-        Click any thumbnail to load and play that video.
-      </p>
+      <div class="note">
+        Thumbnails and durations are generated automatically from the video files.
+      </div>
     </section>
   </main>
 
   <script>
-    /*
-      ==========================================================
-      VIDEO LIBRARY CONFIG
-      ----------------------------------------------------------
-      Add, remove, or edit videos in this array.
-      Each item needs:
-      - title
-      - subtitle
-      - duration
-      - src (path to video file)
-      - thumb (path to thumbnail image)
-      ==========================================================
-    */
-    const videoLibrary = [
-      {
-        title: "The Slurrification",
-        subtitle: "The Weather Channel",
-        duration: "0:29",
-        src: "videos/video_1.mp4",
-        thumb: "thumbs/video_1.png"
-      },
-      {
-        title: "Video Two",
-        subtitle: "Second hosted video example",
-        duration: "2:08",
-        src: "videos/video2.mp4",
-        thumb: "thumbs/video2.jpg"
-      },
-      {
-        title: "Video Three",
-        subtitle: "Professional showcase sample",
-        duration: "0:58",
-        src: "videos/video3.mp4",
-        thumb: "thumbs/video3.jpg"
-      }
-    ];
-
-    const mainVideo = document.getElementById("mainVideo");
+    const player = document.getElementById("player");
     const gallery = document.getElementById("gallery");
-    const videoTitle = document.getElementById("videoTitle");
-    const videoSubtitle = document.getElementById("videoSubtitle");
+    const titleEl = document.getElementById("currentTitle");
+    const subEl = document.getElementById("currentSub");
+    const stage = document.getElementById("stage");
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
-    const loadingOverlay = document.getElementById("loadingOverlay");
-    const videoStage = document.getElementById("videoStage");
 
+    let videos = [];
     let currentIndex = 0;
 
-    function showLoading(show) {
-      loadingOverlay.classList.toggle("show", show);
-      loadingOverlay.setAttribute("aria-hidden", show ? "false" : "true");
+    async function fetchManifest() {
+      const res = await fetch("videos.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("Could not load videos.json");
+      return res.json();
     }
 
-    function setActiveThumbnail() {
-      const cards = gallery.querySelectorAll(".thumb-card");
-      cards.forEach((card, index) => {
-        card.classList.toggle("active", index === currentIndex);
-        card.setAttribute("aria-current", index === currentIndex ? "true" : "false");
+    function prettyName(filename) {
+      return filename
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[-_]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function formatDuration(seconds) {
+      if (!Number.isFinite(seconds)) return "";
+      const s = Math.floor(seconds % 60).toString().padStart(2, "0");
+      const m = Math.floor((seconds / 60) % 60).toString().padStart(1, "0");
+      const h = Math.floor(seconds / 3600);
+      return h > 0 ? `${h}:${m.padStart(2, "0")}:${s}` : `${m}:${s}`;
+    }
+
+    function showLoading(on) {
+      stage.classList.toggle("loading", on);
+    }
+
+    function setActiveCard() {
+      [...gallery.querySelectorAll(".card")].forEach((card, i) => {
+        card.classList.toggle("active", i === currentIndex);
       });
-    }
-
-    function renderGallery() {
-      if (!videoLibrary.length) {
-        gallery.innerHTML = `
-          <div class="empty-state">
-            No videos found. Add items to the <code>videoLibrary</code> array in the script.
-          </div>
-        `;
-        videoTitle.textContent = "No videos available";
-        videoSubtitle.textContent = "Add videos to begin using the gallery.";
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-        return;
-      }
-
-      gallery.innerHTML = videoLibrary.map((video, index) => `
-        <button
-          class="thumb-card ${index === currentIndex ? "active" : ""}"
-          type="button"
-          data-index="${index}"
-          aria-label="Play ${escapeHtml(video.title)}"
-          aria-current="${index === currentIndex ? "true" : "false"}"
-        >
-          <div class="thumb-image-wrap">
-            <img
-              class="thumb-image"
-              src="${video.thumb}"
-              alt="${escapeHtml(video.title)} thumbnail"
-              loading="lazy"
-            />
-            ${video.duration ? `<span class="thumb-duration">${escapeHtml(video.duration)}</span>` : ""}
-          </div>
-          <div class="thumb-body">
-            <h4 class="thumb-title">${escapeHtml(video.title)}</h4>
-            <p class="thumb-subtitle">${escapeHtml(video.subtitle || "")}</p>
-          </div>
-        </button>
-      `).join("");
-
-      gallery.addEventListener("click", onGalleryClick);
-    }
-
-    function onGalleryClick(event) {
-      const card = event.target.closest(".thumb-card");
-      if (!card) return;
-
-      const index = Number(card.dataset.index);
-      if (Number.isNaN(index)) return;
-
-      loadVideo(index, true);
     }
 
     function loadVideo(index, autoplay = false) {
-      if (!videoLibrary[index]) return;
-
+      if (!videos[index]) return;
       currentIndex = index;
-      const video = videoLibrary[index];
+      const item = videos[index];
 
       showLoading(true);
-      videoStage.classList.add("is-fading");
+      titleEl.textContent = item.title;
+      subEl.textContent = item.duration ? `${item.duration}` : "Video file";
 
-      videoTitle.textContent = video.title;
-      videoSubtitle.textContent = video.subtitle || "";
-
-      mainVideo.pause();
-      mainVideo.src = video.src;
-      mainVideo.load();
-
-      setActiveThumbnail();
+      player.pause();
+      player.src = item.src;
+      player.load();
+      setActiveCard();
 
       const onCanPlay = async () => {
         showLoading(false);
-        videoStage.classList.remove("is-fading");
-
         if (autoplay) {
-          try {
-            await mainVideo.play();
-          } catch (err) {
-            // Autoplay may be blocked by browser policies.
-            console.warn("Autoplay blocked:", err);
-          }
+          try { await player.play(); } catch (e) {}
         }
-
-        mainVideo.removeEventListener("canplay", onCanPlay);
+        player.removeEventListener("canplay", onCanPlay);
       };
 
-      mainVideo.addEventListener("canplay", onCanPlay);
+      player.addEventListener("canplay", onCanPlay);
     }
 
-    function goToPrevious() {
-      if (!videoLibrary.length) return;
-      const newIndex = (currentIndex - 1 + videoLibrary.length) % videoLibrary.length;
-      loadVideo(newIndex, true);
+    function prevVideo() {
+      if (!videos.length) return;
+      loadVideo((currentIndex - 1 + videos.length) % videos.length, true);
     }
 
-    function goToNext() {
-      if (!videoLibrary.length) return;
-      const newIndex = (currentIndex + 1) % videoLibrary.length;
-      loadVideo(newIndex, true);
+    function nextVideo() {
+      if (!videos.length) return;
+      loadVideo((currentIndex + 1) % videos.length, true);
     }
 
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, (char) => {
-        const map = {
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#039;"
-        };
-        return map[char];
+    async function makeThumbnail(src) {
+      return new Promise((resolve) => {
+        const v = document.createElement("video");
+        v.src = src;
+        v.muted = true;
+        v.playsInline = true;
+        v.preload = "metadata";
+        v.crossOrigin = "anonymous";
+
+        const fail = () => resolve(null);
+
+        v.addEventListener("error", fail, { once: true });
+
+        v.addEventListener("loadeddata", () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = v.videoWidth || 640;
+            canvas.height = v.videoHeight || 360;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+            resolve({
+              canvas,
+              duration: formatDuration(v.duration)
+            });
+          } catch (err) {
+            resolve({
+              canvas: null,
+              duration: formatDuration(v.duration)
+            });
+          }
+        }, { once: true });
       });
     }
 
-    prevBtn.addEventListener("click", goToPrevious);
-    nextBtn.addEventListener("click", goToNext);
+    async function renderGallery() {
+      if (!videos.length) {
+        gallery.innerHTML = `<div class="empty">No videos found in <code>videos.json</code>.</div>`;
+        titleEl.textContent = "No videos found";
+        subEl.textContent = "Add files to /videos and redeploy.";
+        return;
+      }
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "ArrowLeft") goToPrevious();
-      if (event.key === "ArrowRight") goToNext();
-    });
+      gallery.innerHTML = "";
 
-    mainVideo.addEventListener("waiting", () => showLoading(true));
-    mainVideo.addEventListener("playing", () => showLoading(false));
-    mainVideo.addEventListener("loadeddata", () => {
-      videoStage.classList.remove("is-fading");
-      showLoading(false);
-    });
+      for (let i = 0; i < videos.length; i++) {
+        const item = videos[i];
 
-    renderGallery();
-    if (videoLibrary.length) {
-      loadVideo(0, false);
+        const card = document.createElement("button");
+        card.className = "card";
+        card.type = "button";
+        card.addEventListener("click", () => loadVideo(i, true));
+
+        const thumb = document.createElement("div");
+        thumb.className = "thumb";
+
+        const thumbResult = await makeThumbnail(item.src);
+
+        if (thumbResult?.canvas) {
+          thumb.appendChild(thumbResult.canvas);
+        } else {
+          const fallback = document.createElement("div");
+          fallback.style.width = "100%";
+          fallback.style.height = "100%";
+          fallback.style.display = "grid";
+          fallback.style.placeItems = "center";
+          fallback.style.color = "#475569";
+          fallback.style.fontWeight = "700";
+          fallback.textContent = "VIDEO";
+          thumb.appendChild(fallback);
+        }
+
+        const dur = document.createElement("span");
+        dur.className = "dur";
+        dur.textContent = thumbResult?.duration || "";
+        thumb.appendChild(dur);
+
+        const body = document.createElement("div");
+        body.className = "card-body";
+
+        const h4 = document.createElement("h4");
+        h4.className = "card-title";
+        h4.textContent = item.title;
+
+        const p = document.createElement("p");
+        p.className = "card-sub";
+        p.textContent = item.filename;
+
+        body.appendChild(h4);
+        body.appendChild(p);
+
+        card.appendChild(thumb);
+        card.appendChild(body);
+        gallery.appendChild(card);
+
+        item.duration = thumbResult?.duration || "";
+      }
+
+      setActiveCard();
+      subEl.textContent = videos[0]?.duration || "Video file";
     }
+
+    async function init() {
+      try {
+        const manifest = await fetchManifest();
+
+        videos = manifest.files.map((filename) => ({
+          filename,
+          title: prettyName(filename),
+          src: `videos/${encodeURIComponent(filename)}`
+        }));
+
+        await renderGallery();
+        loadVideo(0, false);
+      } catch (err) {
+        gallery.innerHTML = `
+          <div class="empty">
+            Could not load <code>videos.json</code>.<br><br>
+            Make sure your build step generates it before deploy.
+          </div>
+        `;
+        titleEl.textContent = "Setup needed";
+        subEl.textContent = "Generate videos.json during build.";
+      }
+    }
+
+    prevBtn.addEventListener("click", prevVideo);
+    nextBtn.addEventListener("click", nextVideo);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") prevVideo();
+      if (e.key === "ArrowRight") nextVideo();
+    });
+
+    player.addEventListener("waiting", () => showLoading(true));
+    player.addEventListener("playing", () => showLoading(false));
+    player.addEventListener("loadeddata", () => showLoading(false));
+
+    init();
   </script>
 </body>
 </html>
