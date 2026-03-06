@@ -248,13 +248,13 @@
       aspect-ratio: 16 / 9;
     }
 
-    .thumb canvas {
+    .thumb canvas,
+    .thumb img {
       width: 100%;
       height: 100%;
       display: block;
       object-fit: cover;
     }
-
     .thumb-fallback {
       width: 100%;
       height: 100%;
@@ -332,10 +332,14 @@
   }
 
   .player-shell.sticky-mobile {
+    position: static;
+  }
+
+  .player-shell.sticky-mobile .stage {
     position: sticky;
     top: 68px;
     z-index: 15;
-    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow);
   }
 
   .stage {
@@ -367,6 +371,7 @@
   .gallery {
     grid-template-columns: 1fr;
     gap: 12px;
+    margin-top: 8px;
   }
 
   .card {
@@ -393,8 +398,8 @@
     <div class="wrap header-inner">
       <div class="logo">▶</div>
       <div class="title">
-        <h1>Video Library</h1>
-        <p>Drop videos into /source-videos and redeploy</p>
+        <h1>Pedro-Video</h1>
+        <p>Please peruse</p>
       </div>
     </div>
   </header>
@@ -402,9 +407,6 @@
   <main class="wrap">
     <section class="intro">
       <h2>Featured Video</h2>
-      <p>
-        Videos are automatically transcoded during deploy, added to the library, and displayed here with generated thumbnails.
-      </p>
     </section>
 
     <section class="player-shell sticky-mobile" id="playerShell">
@@ -433,9 +435,6 @@
     <section>
       <h3 class="section-title">Library</h3>
       <div class="gallery" id="gallery"></div>
-      <div class="note">
-        Thumbnails and durations are generated automatically from the published video files.
-      </div>
     </section>
   </main>
 
@@ -600,19 +599,20 @@
           clearTimeout(timer);
           resolve(result);
         };
-
+    
         const timer = setTimeout(() => {
           console.warn("[thumb] timeout while generating thumbnail for:", src);
           done(null);
         }, 5000);
-
+  
         v.src = src;
         v.muted = true;
         v.playsInline = true;
         v.preload = "metadata";
+        v.crossOrigin = "anonymous";
 
         console.log("[thumb] start:", src);
-
+  
         v.addEventListener("error", () => {
           console.error("[thumb] video error for:", src, v.error);
           done(null);
@@ -622,7 +622,7 @@
           console.log("[thumb] loadedmetadata:", src, "duration:", v.duration);
 
           if (!Number.isFinite(v.duration) || v.duration <= 0) {
-            done({ canvas: null, duration: "" });
+            done({ imageUrl: null, duration: "" });
             return;
           }
 
@@ -633,7 +633,7 @@
           } catch (err) {
             console.warn("[thumb] seek failed, using fallback:", src, err);
             done({
-              canvas: null,
+              imageUrl: null,
               duration: formatDuration(v.duration)
             });
           }
@@ -649,18 +649,20 @@
 
             const ctx = canvas.getContext("2d");
             ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+  
+            const imageUrl = canvas.toDataURL("image/jpeg", 0.82);
 
             done({
-              canvas,
+              imageUrl,
               duration: formatDuration(v.duration)
             });
           } catch (err) {
             console.warn("[thumb] canvas draw failed:", src, err);
             done({
-              canvas: null,
+              imageUrl: null,
               duration: formatDuration(v.duration)
             });
-          }
+          }  
         }, { once: true });
 
         v.load();
@@ -693,8 +695,12 @@
 
         const thumbResult = await makeThumbnail(item.src);
 
-        if (thumbResult && thumbResult.canvas) {
-          thumb.appendChild(thumbResult.canvas);
+        if (thumbResult && thumbResult.imageUrl) {
+          const img = document.createElement("img");
+          img.src = thumbResult.imageUrl;
+          img.alt = `${item.title} thumbnail`;
+          img.loading = "lazy";
+          thumb.appendChild(img);
         } else {
           const fallback = document.createElement("div");
           fallback.className = "thumb-fallback";
