@@ -332,10 +332,14 @@
   }
 
   .player-shell.sticky-mobile {
+    position: static;
+  }
+
+  .player-shell.sticky-mobile .stage {
     position: sticky;
     top: 68px;
     z-index: 15;
-    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow);
   }
 
   .stage {
@@ -367,6 +371,7 @@
   .gallery {
     grid-template-columns: 1fr;
     gap: 12px;
+    margin-top: 8px;
   }
 
   .card {
