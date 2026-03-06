@@ -248,13 +248,13 @@
       aspect-ratio: 16 / 9;
     }
 
-    .thumb canvas,
     .thumb img {
       width: 100%;
       height: 100%;
       display: block;
       object-fit: cover;
     }
+    
     .thumb-fallback {
       width: 100%;
       height: 100%;
@@ -588,165 +588,84 @@
       scrollToPlayer();
     }
 
-    async function makeThumbnail(src) {
-      return new Promise((resolve) => {
-        const v = document.createElement("video");
-        let finished = false;
+    function renderGallery() {
+  if (!videos.length) {
+    gallery.innerHTML = `<div class="empty">No videos found in <code>videos.json</code>.</div>`;
+    titleEl.textContent = "No videos found";
+    subEl.textContent = "Add files to /source-videos and redeploy.";
+    return;
+  }
 
-        const done = (result) => {
-          if (finished) return;
-          finished = true;
-          clearTimeout(timer);
-          resolve(result);
-        };
-    
-        const timer = setTimeout(() => {
-          console.warn("[thumb] timeout while generating thumbnail for:", src);
-          done(null);
-        }, 5000);
-  
-        v.src = src;
-        v.muted = true;
-        v.playsInline = true;
-        v.preload = "metadata";
-        v.crossOrigin = "anonymous";
+  gallery.innerHTML = "";
 
-        console.log("[thumb] start:", src);
-  
-        v.addEventListener("error", () => {
-          console.error("[thumb] video error for:", src, v.error);
-          done(null);
-        }, { once: true });
+  for (let i = 0; i < videos.length; i++) {
+    const item = videos[i];
 
-        v.addEventListener("loadedmetadata", () => {
-          console.log("[thumb] loadedmetadata:", src, "duration:", v.duration);
+    const card = document.createElement("button");
+    card.className = "card";
+    card.type = "button";
+    card.addEventListener("click", () => {
+      loadVideo(i, true);
+      scrollToPlayer();
+    });
 
-          if (!Number.isFinite(v.duration) || v.duration <= 0) {
-            done({ imageUrl: null, duration: "" });
-            return;
-          }
+    const thumb = document.createElement("div");
+    thumb.className = "thumb";
 
-          const targetTime = Math.min(0.1, Math.max(v.duration / 2, 0.1));
-
-          try {
-            v.currentTime = targetTime;
-          } catch (err) {
-            console.warn("[thumb] seek failed, using fallback:", src, err);
-            done({
-              imageUrl: null,
-              duration: formatDuration(v.duration)
-            });
-          }
-        }, { once: true });
-
-        v.addEventListener("seeked", () => {
-          console.log("[thumb] seeked:", src);
-
-          try {
-            const canvas = document.createElement("canvas");
-            canvas.width = v.videoWidth || 640;
-            canvas.height = v.videoHeight || 360;
-
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-  
-            const imageUrl = canvas.toDataURL("image/jpeg", 0.82);
-
-            done({
-              imageUrl,
-              duration: formatDuration(v.duration)
-            });
-          } catch (err) {
-            console.warn("[thumb] canvas draw failed:", src, err);
-            done({
-              imageUrl: null,
-              duration: formatDuration(v.duration)
-            });
-          }  
-        }, { once: true });
-
-        v.load();
-      });
+    if (item.poster) {
+      const img = document.createElement("img");
+      img.src = item.poster;
+      img.alt = `${item.title} poster`;
+      img.loading = "lazy";
+      img.onerror = () => {
+        thumb.innerHTML = `<div class="thumb-fallback">VIDEO</div>`;
+      };
+      thumb.appendChild(img);
+    } else {
+      const fallback = document.createElement("div");
+      fallback.className = "thumb-fallback";
+      fallback.textContent = "VIDEO";
+      thumb.appendChild(fallback);
     }
 
-    async function renderGallery() {
-      if (!videos.length) {
-        gallery.innerHTML = `<div class="empty">No videos found in <code>videos.json</code>.</div>`;
-        titleEl.textContent = "No videos found";
-        subEl.textContent = "Add files to /source-videos and redeploy.";
-        return;
-      }
+    const dur = document.createElement("span");
+    dur.className = "dur";
+    dur.textContent = item.duration || "";
+    thumb.appendChild(dur);
 
-      gallery.innerHTML = "";
+    const body = document.createElement("div");
+    body.className = "card-body";
 
-      for (let i = 0; i < videos.length; i++) {
-        const item = videos[i];
+    const h4 = document.createElement("h4");
+    h4.className = "card-title";
+    h4.textContent = item.title;
 
-        const card = document.createElement("button");
-        card.className = "card";
-        card.type = "button";
-        card.addEventListener("click", () => {
-          loadVideo(i, true);
-          scrollToPlayer();
-        });
+    const p = document.createElement("p");
+    p.className = "card-sub";
+    p.textContent = item.filename;
 
-        const thumb = document.createElement("div");
-        thumb.className = "thumb";
+    body.appendChild(h4);
+    body.appendChild(p);
 
-        const thumbResult = await makeThumbnail(item.src);
+    card.appendChild(thumb);
+    card.appendChild(body);
+    gallery.appendChild(card);
+  }
 
-        if (thumbResult && thumbResult.imageUrl) {
-          const img = document.createElement("img");
-          img.src = thumbResult.imageUrl;
-          img.alt = `${item.title} thumbnail`;
-          img.loading = "lazy";
-          thumb.appendChild(img);
-        } else {
-          const fallback = document.createElement("div");
-          fallback.className = "thumb-fallback";
-          fallback.textContent = "VIDEO";
-          thumb.appendChild(fallback);
-        }
-
-        const dur = document.createElement("span");
-        dur.className = "dur";
-        dur.textContent = thumbResult && thumbResult.duration ? thumbResult.duration : "";
-        thumb.appendChild(dur);
-
-        const body = document.createElement("div");
-        body.className = "card-body";
-
-        const h4 = document.createElement("h4");
-        h4.className = "card-title";
-        h4.textContent = item.title;
-
-        const p = document.createElement("p");
-        p.className = "card-sub";
-        p.textContent = item.filename;
-
-        body.appendChild(h4);
-        body.appendChild(p);
-
-        card.appendChild(thumb);
-        card.appendChild(body);
-        gallery.appendChild(card);
-
-        item.duration = thumbResult && thumbResult.duration ? thumbResult.duration : "";
-      }
-
-      setActiveCard();
-    }
+  setActiveCard();
+}
 
     async function init() {
       try {
         const manifest = await fetchManifest();
 
-        videos = manifest.files.map((filename) => ({
-          filename,
-          title: prettyName(filename),
-          src: `videos/${encodeURIComponent(filename)}`
+          videos = (manifest.videos || []).map((item) => ({
+            filename: item.filename,
+            title: prettyName(item.filename),
+            src: item.src,
+            poster: item.poster || "",
+            duration: ""
         }));
-
         console.log("[videos] built video list:", videos);
 
         if (!videos.length) {
@@ -761,7 +680,7 @@
         }
 
         loadVideo(0, false);
-        await renderGallery();
+        renderGallery();
       } catch (err) {
         console.error("[videos] init failed:", err);
 
