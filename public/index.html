@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Library</title>
+  <style>
+    :root{
+      --bg: #0f172a;
+      --bg2: #111827;
+      --panel: rgba(255,255,255,0.05);
+      --card: #ffffff;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --heading: #ffffff;
+      --accent: #38bdf8;
+      --accent-2: #0ea5e9;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 10px 28px rgba(0,0,0,0.28);
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --maxw: 1200px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(56,189,248,0.10), transparent 24%),
+        linear-gradient(180deg, #0b1220 0%, var(--bg) 100%);
+      color: var(--text);
+      scroll-behavior: smooth;
+    }
+
+    body { min-height: 100vh; }
+
+    .wrap {
+      width: min(calc(100% - 32px), var(--maxw));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(15,23,42,0.76);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 0;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #001018;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: var(--heading);
+    }
+
+    .title p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    main {
+      padding: 28px 0 42px;
+    }
+
+    .intro h2 {
+      margin: 0 0 8px;
+      font-size: clamp(1.5rem, 2vw, 2rem);
+      color: var(--heading);
+    }
+
+    .intro p {
+      margin: 0 0 24px;
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.6;
+    }
+
+    .player-shell {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .stage {
+      position: relative;
+      background: #000;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+      opacity: 1;
+      transition: opacity 180ms ease;
+    }
+
+    .stage.loading video {
+      opacity: 0.35;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(2, 6, 23, 0.42);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .stage.loading .overlay {
+      opacity: 1;
+    }
+
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 3px solid rgba(255,255,255,0.24);
+      border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 16px 4px 4px;
+    }
+
+    .meta h3 {
+      margin: 0 0 4px;
+      color: var(--heading);
+      font-size: 1.12rem;
+    }
+
+    .meta p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button.nav {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      color: var(--heading);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+    }
+
+    button.nav:hover {
+      background: rgba(56,189,248,0.14);
+      border-color: rgba(56,189,248,0.4);
+      transform: translateY(-1px);
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--heading);
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      width: 100%;
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: var(--card);
+      color: #0f172a;
+      border-radius: var(--radius-md);
+      padding: 10px;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(14,165,233,0.45);
+    }
+
+    .card.active {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 2px rgba(14,165,233,0.18), 0 16px 36px rgba(0,0,0,0.26);
+    }
+
+    .thumb {
+      position: relative;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #dbe4ee;
+      aspect-ratio: 16 / 9;
+    }
+
+    .thumb canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .thumb-fallback {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: #475569;
+      font-weight: 700;
+      background: #dbe4ee;
+    }
+
+    .dur {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      background: rgba(15,23,42,0.84);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 7px;
+      border-radius: 999px;
+    }
+
+    .card-body {
+      padding: 12px 4px 4px;
+    }
+
+    .card-title {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .card-sub {
+      margin: 0;
+      color: #64748b;
+      font-size: 0.92rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .empty {
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 720px) {
+  .wrap {
+    width: min(calc(100% - 20px), var(--maxw));
+  }
+
+  main {
+    padding: 18px 0 28px;
+  }
+
+  .intro p {
+    margin-bottom: 18px;
+    font-size: 0.96rem;
+  }
+
+  .player-shell {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .player-shell.sticky-mobile {
+    position: sticky;
+    top: 68px;
+    z-index: 15;
+    backdrop-filter: blur(10px);
+  }
+
+  .stage {
+    border-radius: 14px;
+  }
+
+  .meta {
+    padding-top: 14px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meta h3 {
+    font-size: 1rem;
+  }
+
+  .meta p {
+    font-size: 0.9rem;
+  }
+
+  .btn-row {
+    width: 100%;
+  }
+
+  button.nav {
+    flex: 1 1 140px;
+  }
+
+  .gallery {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .card {
+    padding: 8px;
+  }
+
+  .card-body {
+    padding: 10px 2px 2px;
+  }
+
+  .card-title {
+    font-size: 0.98rem;
+  }
+
+  .card-sub {
+    font-size: 0.88rem;
+  }
+}
+    
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap header-inner">
+      <div class="logo">▶</div>
+      <div class="title">
+        <h1>Video Library</h1>
+        <p>Drop videos into /source-videos and redeploy</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="intro">
+      <h2>Featured Video</h2>
+      <p>
+        Videos are automatically transcoded during deploy, added to the library, and displayed here with generated thumbnails.
+      </p>
+    </section>
+
+    <section class="player-shell sticky-mobile" id="playerShell">
+      <div class="stage" id="stage">
+        <video id="player" controls preload="metadata" playsinline></video>
+        <div class="overlay">
+          <div style="text-align:center;color:#fff;font-weight:600;">
+            <div class="spinner"></div>
+            Loading video...
+          </div>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div>
+          <h3 id="currentTitle">Loading...</h3>
+          <p id="currentSub">Preparing library…</p>
+        </div>
+        <div class="btn-row">
+          <button class="nav" id="prevBtn" type="button">← Previous</button>
+          <button class="nav" id="nextBtn" type="button">Next →</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h3 class="section-title">Library</h3>
+      <div class="gallery" id="gallery"></div>
+      <div class="note">
+        Thumbnails and durations are generated automatically from the published video files.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const player = document.getElementById("player");
+    const gallery = document.getElementById("gallery");
+    const titleEl = document.getElementById("currentTitle");
+    const subEl = document.getElementById("currentSub");
+    const stage = document.getElementById("stage");
+    const playerShell = document.getElementById("playerShell");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    console.log("[videos] page loaded");
+    console.log("[videos] origin:", location.origin);
+    console.log("[videos] pathname:", location.pathname);
+
+    let videos = [];
+    let currentIndex = 0;
+
+    async function fetchManifest() {
+      const url = `${location.origin}/videos.json?v=${Date.now()}`;
+      console.log("[videos] requesting manifest:", url);
+
+      const res = await fetch(url, { cache: "no-store" });
+
+      console.log("[videos] manifest status:", res.status, res.statusText);
+      console.log("[videos] manifest content-type:", res.headers.get("content-type"));
+
+      const text = await res.text();
+      console.log("[videos] raw manifest length:", text.length);
+      console.log("[videos] raw manifest text start:", JSON.stringify(text.slice(0, 200)));
+      console.log("[videos] raw manifest text full:", JSON.stringify(text));
+
+      if (!res.ok) {
+        throw new Error(`Could not load videos.json (${res.status} ${res.statusText})`);
+      }
+
+      if (!text.trim()) {
+        throw new Error("videos.json is empty");
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("[videos] JSON parse failed. Raw text was:", JSON.stringify(text));
+        throw err;
+      }
+
+      console.log("[videos] manifest data:", data);
+      return data;
+    }
+    
+    function prettyName(filename) {
+      return filename
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[-_]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function showLoading(on) {
+      stage.classList.toggle("loading", on);
+    }
+
+    function formatDuration(seconds) {
+      if (!Number.isFinite(seconds)) return "";
+      const s = Math.floor(seconds % 60).toString().padStart(2, "0");
+      const m = Math.floor((seconds / 60) % 60).toString();
+      const h = Math.floor(seconds / 3600);
+      return h > 0 ? `${h}:${m.padStart(2, "0")}:${s}` : `${m}:${s}`;
+    }
+
+    function setActiveCard() {
+      [...gallery.querySelectorAll(".card")].forEach((card, i) => {
+        card.classList.toggle("active", i === currentIndex);
+      });
+    }
+
+    function scrollToPlayer() {
+      if (!playerShell) return;
+
+      const headerOffset = window.innerWidth <= 720 ? 86 : 84;
+      const top = playerShell.getBoundingClientRect().top + window.scrollY - headerOffset;
+
+      window.scrollTo({
+        top,
+        behavior: "smooth"
+      });
+    }
+
+    function loadVideo(index, autoplay = false) {
+      if (!videos[index]) return;
+
+      currentIndex = index;
+      const item = videos[index];
+
+      console.log("[player] loading item:", item);
+
+      showLoading(true);
+      titleEl.textContent = item.title;
+      subEl.textContent = item.duration ? item.duration : "Loading video...";
+
+      player.pause();
+      player.src = item.src;
+      player.load();
+      setActiveCard();
+
+      const timeout = setTimeout(() => {
+        console.warn("[player] timeout waiting for canplay:", item.src);
+        showLoading(false);
+        subEl.textContent = "Timed out loading this video.";
+      }, 8000);
+
+      const onCanPlay = async () => {
+        clearTimeout(timeout);
+        console.log("[player] ready:", item.src);
+        showLoading(false);
+
+        if (autoplay) {
+          try {
+            await player.play();
+          } catch (e) {
+            console.warn("[player] autoplay blocked:", e);
+          }
+        }
+      };
+
+      const onError = () => {
+        clearTimeout(timeout);
+        console.error("[player] failed to load:", item.src, player.error);
+        showLoading(false);
+        subEl.textContent = "Failed to load this video.";
+      };
+
+      player.addEventListener("canplay", onCanPlay, { once: true });
+      player.addEventListener("error", onError, { once: true });
+    }
+
+    function prevVideo() {
+      if (!videos.length) return;
+      loadVideo((currentIndex - 1 + videos.length) % videos.length, true);
+      scrollToPlayer();
+    }
+
+    function nextVideo() {
+      if (!videos.length) return;
+      loadVideo((currentIndex + 1) % videos.length, true);
+      scrollToPlayer();
+    }
+
+    async function makeThumbnail(src) {
+      return new Promise((resolve) => {
+        const v = document.createElement("video");
+        let finished = false;
+
+        const done = (result) => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          resolve(result);
+        };
+
+        const timer = setTimeout(() => {
+          console.warn("[thumb] timeout while generating thumbnail for:", src);
+          done(null);
+        }, 5000);
+
+        v.src = src;
+        v.muted = true;
+        v.playsInline = true;
+        v.preload = "metadata";
+
+        console.log("[thumb] start:", src);
+
+        v.addEventListener("error", () => {
+          console.error("[thumb] video error for:", src, v.error);
+          done(null);
+        }, { once: true });
+
+        v.addEventListener("loadedmetadata", () => {
+          console.log("[thumb] loadedmetadata:", src, "duration:", v.duration);
+
+          if (!Number.isFinite(v.duration) || v.duration <= 0) {
+            done({ canvas: null, duration: "" });
+            return;
+          }
+
+          const targetTime = Math.min(0.1, Math.max(v.duration / 2, 0.1));
+
+          try {
+            v.currentTime = targetTime;
+          } catch (err) {
+            console.warn("[thumb] seek failed, using fallback:", src, err);
+            done({
+              canvas: null,
+              duration: formatDuration(v.duration)
+            });
+          }
+        }, { once: true });
+
+        v.addEventListener("seeked", () => {
+          console.log("[thumb] seeked:", src);
+
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = v.videoWidth || 640;
+            canvas.height = v.videoHeight || 360;
+
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+
+            done({
+              canvas,
+              duration: formatDuration(v.duration)
+            });
+          } catch (err) {
+            console.warn("[thumb] canvas draw failed:", src, err);
+            done({
+              canvas: null,
+              duration: formatDuration(v.duration)
+            });
+          }
+        }, { once: true });
+
+        v.load();
+      });
+    }
+
+    async function renderGallery() {
+      if (!videos.length) {
+        gallery.innerHTML = `<div class="empty">No videos found in <code>videos.json</code>.</div>`;
+        titleEl.textContent = "No videos found";
+        subEl.textContent = "Add files to /source-videos and redeploy.";
+        return;
+      }
+
+      gallery.innerHTML = "";
+
+      for (let i = 0; i < videos.length; i++) {
+        const item = videos[i];
+
+        const card = document.createElement("button");
+        card.className = "card";
+        card.type = "button";
+        card.addEventListener("click", () => {
+          loadVideo(i, true);
+          scrollToPlayer();
+        });
+
+        const thumb = document.createElement("div");
+        thumb.className = "thumb";
+
+        const thumbResult = await makeThumbnail(item.src);
+
+        if (thumbResult && thumbResult.canvas) {
+          thumb.appendChild(thumbResult.canvas);
+        } else {
+          const fallback = document.createElement("div");
+          fallback.className = "thumb-fallback";
+          fallback.textContent = "VIDEO";
+          thumb.appendChild(fallback);
+        }
+
+        const dur = document.createElement("span");
+        dur.className = "dur";
+        dur.textContent = thumbResult && thumbResult.duration ? thumbResult.duration : "";
+        thumb.appendChild(dur);
+
+        const body = document.createElement("div");
+        body.className = "card-body";
+
+        const h4 = document.createElement("h4");
+        h4.className = "card-title";
+        h4.textContent = item.title;
+
+        const p = document.createElement("p");
+        p.className = "card-sub";
+        p.textContent = item.filename;
+
+        body.appendChild(h4);
+        body.appendChild(p);
+
+        card.appendChild(thumb);
+        card.appendChild(body);
+        gallery.appendChild(card);
+
+        item.duration = thumbResult && thumbResult.duration ? thumbResult.duration : "";
+      }
+
+      setActiveCard();
+    }
+
+    async function init() {
+      try {
+        const manifest = await fetchManifest();
+
+        videos = manifest.files.map((filename) => ({
+          filename,
+          title: prettyName(filename),
+          src: `videos/${encodeURIComponent(filename)}`
+        }));
+
+        console.log("[videos] built video list:", videos);
+
+        if (!videos.length) {
+          gallery.innerHTML = `
+            <div class="empty">
+              No videos found in <code>videos.json</code>.
+            </div>
+          `;
+          titleEl.textContent = "No videos found";
+          subEl.textContent = "Add files to /source-videos and redeploy.";
+          return;
+        }
+
+        loadVideo(0, false);
+        await renderGallery();
+      } catch (err) {
+        console.error("[videos] init failed:", err);
+
+        gallery.innerHTML = `
+          <div class="empty">
+            Could not load <code>videos.json</code>.<br><br>
+            Error: ${err.message}
+          </div>
+        `;
+        titleEl.textContent = "Setup needed";
+        subEl.textContent = err.message;
+      }
+    }
+
+    prevBtn.addEventListener("click", prevVideo);
+    nextBtn.addEventListener("click", nextVideo);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") prevVideo();
+      if (e.key === "ArrowRight") nextVideo();
+    });
+
+    player.addEventListener("waiting", () => showLoading(true));
+    player.addEventListener("playing", () => showLoading(false));
+    player.addEventListener("loadeddata", () => showLoading(false));
+
+    player.addEventListener("loadstart", () => {
+      console.log("[player] loadstart:", player.src);
+    });
+
+    player.addEventListener("loadedmetadata", () => {
+      console.log("[player] loadedmetadata:", player.src, "duration:", player.duration);
+    });
+
+    player.addEventListener("canplay", () => {
+      console.log("[player] canplay:", player.src);
+    });
+
+    player.addEventListener("error", () => {
+      console.error("[player] error:", player.src, player.error);
+      showLoading(false);
+      subEl.textContent = "Video failed to load.";
+    });
+
+    init();
+  </script>
+</body>
+</html>
